@@ -66,7 +66,7 @@ def print_degree_stats(outgoing, incoming, pages):
     stats(out_degrees, "Outgoing")
     stats(in_degrees, "Incoming")
 
-def pagerank(pages, outgoing, incoming):
+def pagerank(pages, outgoing, incoming): #Debugging here in chat
     N = len(pages)
     pr = {p: 1.0 / N for p in pages}
     converged = False

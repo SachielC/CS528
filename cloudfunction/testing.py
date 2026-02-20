@@ -2,9 +2,7 @@ import requests
 
 BASE_URL = "https://recieve-x7635okvpq-uc.a.run.app"
 
-# Test cases
 tests = [
-    # 1️⃣ Valid GET - query param
     {
         "description": "Valid GET request (query param)",
         "url": f"{BASE_URL}?file=2.html",
@@ -20,7 +18,6 @@ tests = [
         "headers": {"X-country": "USA"},
         "expected": 200
     },
-    # 3️⃣ GET non-existent file
     {
         "description": "GET request for non-existent file",
         "url": f"{BASE_URL}?file=99999.html",
@@ -28,7 +25,6 @@ tests = [
         "headers": {"X-country": "USA"},
         "expected": 404
     },
-    # 4️⃣ GET from forbidden country
     {
         "description": "GET request from forbidden country",
         "url": f"{BASE_URL}?file=2.html",
@@ -36,7 +32,6 @@ tests = [
         "headers": {"X-country": "North Korea"},
         "expected": 400
     },
-    # 5️⃣ POST request (501)
     {
         "description": "POST request to check 501",
         "url": f"{BASE_URL}?file=2.html",

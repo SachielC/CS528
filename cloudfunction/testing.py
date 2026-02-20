@@ -1,0 +1,64 @@
+import requests
+
+BASE_URL = "https://recieve-x7635okvpq-uc.a.run.app"
+
+# Test cases
+tests = [
+    # 1️⃣ Valid GET - query param
+    {
+        "description": "Valid GET request (query param)",
+        "url": f"{BASE_URL}?file=2.html",
+        "method": "GET",
+        "headers": {"X-country": "USA"},
+        "expected": 200
+    },
+    # 2️⃣ Valid GET - path style
+    {
+        "description": "Valid GET request (path style)",
+        "url": f"{BASE_URL}/webdir/2.html",
+        "method": "GET",
+        "headers": {"X-country": "USA"},
+        "expected": 200
+    },
+    # 3️⃣ GET non-existent file
+    {
+        "description": "GET request for non-existent file",
+        "url": f"{BASE_URL}?file=99999.html",
+        "method": "GET",
+        "headers": {"X-country": "USA"},
+        "expected": 404
+    },
+    # 4️⃣ GET from forbidden country
+    {
+        "description": "GET request from forbidden country",
+        "url": f"{BASE_URL}?file=2.html",
+        "method": "GET",
+        "headers": {"X-country": "North Korea"},
+        "expected": 400
+    },
+    # 5️⃣ POST request (501)
+    {
+        "description": "POST request to check 501",
+        "url": f"{BASE_URL}?file=2.html",
+        "method": "POST",
+        "headers": {"X-country": "USA"},
+        "expected": 501
+    }
+]
+
+for test in tests:
+    method = test["method"].upper()
+    headers = test["headers"]
+    
+    if method == "GET":
+        r = requests.get(test["url"], headers=headers)
+    elif method == "POST":
+        r = requests.post(test["url"], headers=headers)
+    else:
+        print(f"Unsupported method: {method}")
+        continue
+
+    print(f"\nTest: {test['description']}")
+    print(f"URL: {test['url']}")
+    print(f"Expected status: {test['expected']}, Actual status: {r.status_code}")
+    print(f"Response body:\n{r.text}")

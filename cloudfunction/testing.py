@@ -10,7 +10,6 @@ tests = [
         "headers": {"X-country": "USA"},
         "expected": 200
     },
-    # 2️⃣ Valid GET - path style
     {
         "description": "Valid GET request (path style)",
         "url": f"{BASE_URL}/webdir/2.html",

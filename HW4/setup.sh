@@ -1,3 +1,5 @@
+#!/bin/bash
+
 LOCK_FILE="/var/log/webserver_setup.lock"
 
 if [ ! -f "$LOCK_FILE" ]; then
@@ -7,6 +9,10 @@ if [ ! -f "$LOCK_FILE" ]; then
     apt install -y python3-pip
 
     pip3 install google-cloud-storage google-cloud-pubsub
+
+    export BUCKET_NAME=hw2bucketmanyrank
+    export TOPIC_NAME=forbidden-topic
+    export GCP_PROJECT=coral-mission-485618-m4
 
     cat > /home/server.py << 'EOF'
 import os
@@ -22,7 +28,7 @@ PROJECT_ID = os.environ["GCP_PROJECT"]
 TOPIC_NAME = os.environ["TOPIC_NAME"]
 
 FORBIDDEN = ["North Korea", "Iran", "Cuba", "Myanmar",
-            "Syria", "Iraq", "Libya", "Zimbabwe", "Sudan"]
+             "Syria", "Iraq", "Libya", "Zimbabwe", "Sudan"]
 
 storage_client = storage.Client()
 bucket = storage_client.bucket(BUCKET_NAME)
@@ -87,11 +93,9 @@ if __name__ == "__main__":
     server.serve_forever()
 EOF
 
+    chmod 644 /home/server.py
+
+    nohup python3 /home/server.py > /home/server.log 2>&1 &
+
     touch "$LOCK_FILE"
 fi
-
-export BUCKET_NAME=hw2bucketmanyrank
-export TOPIC_NAME=forbidden-topic
-export GCP_PROJECT=coral-mission-485618-m4
-
-nohup python3 /home/server.py > /home/server.log 2>&1 &

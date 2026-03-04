@@ -1,19 +1,17 @@
-from flask import Request
-from google.cloud import storage, pubsub_v1
 import os
 import json
+import logging
 from datetime import datetime
+from http.server import BaseHTTPRequestHandler, HTTPServer
+from socketserver import ThreadingMixIn
+from google.cloud import storage, pubsub_v1
 
+BUCKET_NAME = os.environ["BUCKET_NAME"]
+PROJECT_ID = os.environ["GCP_PROJECT"]
+TOPIC_NAME = os.environ["TOPIC_NAME"]
 
-BUCKET_NAME = os.environ.get("BUCKET_NAME")
-PROJECT_ID = os.environ.get("GCP_PROJECT")
-TOPIC_NAME = os.environ.get("TOPIC_NAME")
-
-
-FORBIDDEN = [
-    "North Korea", "Iran", "Cuba", "Myanmar",
-    "Syria", "Iraq", "Libya", "Zimbabwe", "Sudan"
-]
+FORBIDDEN = ["North Korea", "Iran", "Cuba", "Myanmar",
+             "Syria", "Iraq", "Libya", "Zimbabwe", "Sudan"]
 
 storage_client = storage.Client()
 bucket = storage_client.bucket(BUCKET_NAME)
@@ -21,83 +19,58 @@ bucket = storage_client.bucket(BUCKET_NAME)
 publisher = pubsub_v1.PublisherClient()
 topic_path = publisher.topic_path(PROJECT_ID, TOPIC_NAME)
 
+class ThreadedHTTPServer(ThreadingMixIn, HTTPServer):
+    request_queue_size = 5
 
-def log_event(event_type, details):
-    entry = {
-        "event": event_type,
-        "timestamp": datetime.utcnow().isoformat(),
-        "details": details
-    }
-    print(json.dumps(entry))
+class MyHandler(BaseHTTPRequestHandler):
 
-
-def recieve(request: Request):
-    try:
-        log_event("request_received", {
-            "method": request.method,
-            "path": request.path,
-            "args": dict(request.args)
-        })
-
- 
-        if request.method != "GET":
-            log_event("501_error", {
-                "method": request.method
-            })
-            return ("501 Not Implemented", 501)
-
-        country = request.headers.get("X-country", "")
-
+    def do_GET(self):
+        country = self.headers.get("X-country", "")
         if country in FORBIDDEN:
-            message = {
+            msg = {
                 "country": country,
-                "path": request.path,
-                "method": request.method,
+                "path": self.path,
                 "timestamp": datetime.utcnow().isoformat()
             }
+            publisher.publish(topic_path, json.dumps(msg).encode())
+            logging.critical(msg)
+            self.send_response(400)
+            self.end_headers()
+            self.wfile.write(b"Permission Denied")
+            return
 
-            publisher.publish(
-                topic_path,
-                json.dumps(message).encode("utf-8")
-            )
-
-            log_event("forbidden_country", message)
-
-            return ("Permission Denied", 400)
-
-
-        blob_path = None
-
-        # Case A: URL path like /webdir/123.html
-        if request.path and request.path != "/":
-            blob_path = request.path.lstrip("/")
-
-        else:
-            filename = request.args.get("file")
-            if not filename:
-                return ("No file specified", 400)
-
-            blob_path = f"webdir/{filename}"
-
-
+        blob_path = self.path.lstrip("/")
         blob = bucket.blob(blob_path)
-
         if not blob.exists():
-            log_event("404_error", {
-                "file": blob_path
-            })
-            return (f"404 Not Found: {blob_path}", 404)
+            logging.warning(f"404: {blob_path}")
+            self.send_response(404)
+            self.end_headers()
+            self.wfile.write(b"404 Not Found")
+            return
 
-        content = blob.download_as_text()
+        content = blob.download_as_bytes()
+        logging.info(f"200: {blob_path}")
+        self.send_response(200)
+        self.end_headers()
+        self.wfile.write(content)
 
-        log_event("200_success", {
-            "file": blob_path
-        })
+    def do_POST(self): self.not_implemented()
+    def do_PUT(self): self.not_implemented()
+    def do_DELETE(self): self.not_implemented()
+    def do_PATCH(self): self.not_implemented()
+    def do_OPTIONS(self): self.not_implemented()
+    def do_CONNECT(self): self.not_implemented()
+    def do_TRACE(self): self.not_implemented()
+    def do_HEAD(self): self.not_implemented()
 
-        return (content, 200)
+    def not_implemented(self):
+        logging.warning(f"501: {self.command}")
+        self.send_response(501)
+        self.end_headers()
+        self.wfile.write(b"501 Not Implemented")
 
-    except Exception as e:
-        log_event("500_error", {
-            "error": str(e)
-        })
-        return ("Internal Server Error", 500)
+if __name__ == "__main__":
+    logging.basicConfig(level=logging.INFO)
+    server = ThreadedHTTPServer(("", 8080), MyHandler)
+    print("Server running on port 8080")
+    server.serve_forever()

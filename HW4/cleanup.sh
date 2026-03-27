@@ -4,8 +4,8 @@ PROJECT_ID="coral-mission-485618-m4"
 ZONE="us-central1-a"
 
 -
-SERVER_VM_NAME="web-server-vm"
-SUBSCRIBER_VM_NAME="subscriber-vm"
+SERVER_VM_NAME="web-server-vm-auto"
+SUBSCRIBER_VM_NAME="subscriber-vm-auto"
 
 echo "Starting VM teardown..."
 
@@ -24,4 +24,4 @@ gcloud compute instances delete $SUBSCRIBER_VM_NAME \
   --zone=$ZONE \
   --quiet
 
-echo "VM teardown complete. All instances deleted."
+echo "VM teardown complete. All instances deleted. (︶｡︶✽)"

@@ -208,7 +208,7 @@ class MyHandler(BaseHTTPRequestHandler):
     def do_CONNECT(self): self._fail(501)
     def do_TRACE(self): self._fail(501)
 
-# ================= MAIN =================
+#  MAIN 
 if __name__ == "__main__":
     logging.basicConfig(level=logging.INFO)
     server = ThreadedHTTPServer(("0.0.0.0", 8080), MyHandler)

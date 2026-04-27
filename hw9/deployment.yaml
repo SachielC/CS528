@@ -1,0 +1,28 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: web-server
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: web-server
+  template:
+    metadata:
+      labels:
+        app: web-server
+    spec:
+      containers:
+      - name: web-server
+        image: gcr.io/coral-mission-485618-m4/web-server
+        ports:
+        - containerPort: 8080
+        env:
+        - name: BUCKET_NAME
+          value: "hw2bucketmanyrank"
+        - name: GCP_PROJECT
+          value: "coral-mission-485618-m4"
+        - name: GOOGLE_CLOUD_PROJECT
+          value: "coral-mission-485618-m4"
+        - name: TOPIC_NAME
+          value: "forbidden-topic"
